@@ -1,0 +1,19 @@
+{
+  "name": "bot",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "tsc": "tsc",
+    "predev": "npm run tsc",
+    "dev": "cd build && node ./index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^20.11.24",
+    "dotenv": "^16.4.1",
+    "telegraf": "^4.16.3",
+    "typescript": "^5.3.3"
+  }
+}
