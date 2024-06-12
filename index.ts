@@ -3,161 +3,11 @@ import fs from "fs";
 
 import { Telegraf, Markup } from "telegraf";
 import { List } from "./types";
+import literals from "./literals";
+import { capitalizeFirstLetter, encodeQueryData, getIcon } from "./utils";
+import { PREDICTION_NUMBER, WEATHER_BASE } from "./constants";
 
 dotenv.config();
-
-const PREDICTION_NUMBER = 10;
-
-const utils = {
-  capitalizeFirstLetter(str: string) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  },
-
-  padLeft(str: string, fillTo: number, padChar: string = "0") {
-    var pad = new Array(1 + fillTo).join(padChar);
-    return (pad + str).slice(-pad.length);
-  },
-
-  encodeQueryData(data: { [key: string]: string | number }) {
-    let ret = [];
-    for (let d in data) {
-      ret.push(encodeURIComponent(d) + "=" + encodeURIComponent(data[d]));
-    }
-    return ret.join("&");
-  },
-};
-
-const str = {
-  /**
-   *  Replace params in string.
-   *
-   *  @param  {String} str           : String where replace.
-   *  @param  {Array}  paramsReplace : Array of objects.
-   *                                   [{
-   *                                       key  : Name of the param in the template.
-   *                                       value: Value for the param to be inserted.
-   *                                   }]
-   */
-
-  insert(str: string, paramsReplace: { key: string; value: string }[]) {
-    let finalStr;
-    let objParam;
-
-    for (let i = 0, len = paramsReplace.length; i < len; i++) {
-      objParam = paramsReplace[i];
-      finalStr = str.replace("{{" + objParam.key + "}}", objParam.value);
-    }
-
-    return finalStr;
-  },
-
-  // Strings
-  subscribe: "Suscribirme a actualizaciones del tiempo",
-  subscriptionHour: "¿A qué hora quieres recibir la alerta? (0-23)",
-  subscriptionHourError: "La hora introducida es incorrecta. (0-23)",
-  subscriptionMinute: "¿En qué minuto? (0-59)",
-  subscriptionMinuteError: "Los minutos introducidos son incorrectos. (0-59)",
-  subscriptionLocation: "Necesitamos tu ubicación para enviarte el tiempo.",
-  requestLocation:
-    "Por favor, envíame la ubicación de dónde deseas la previsión metereológica.\n\nPulsa el botón <b>Enviar Localización</b> si deseas desde tu posición actual, o enviame otra ubicación a través del icono del clip de Telegram.",
-  sendLocation: "Enviar localización",
-  state: "Ver mi suscripción",
-  unsubscribe: "Eliminar suscripción",
-  current: "Consultar tiempo actual",
-  welcome:
-    "¡Hola {{name}}! Bienvenid@ al bot encargado del servicio del tiempo. ¿Qué te gustaría hacer?",
-  showSubscription: "te enviamos la información del tiempo todos los días",
-  at: "a las",
-  weatherPrediction: "Previsión del tiempo",
-  temperature: "Temperatura",
-  subscriptionCompleted:
-    "Tu suscripción a las alertas del tiempo se ha completado. ¿Qué deseas hacer?",
-  subscriptionRemoved:
-    "Tu suscripción a las alertas del tiempo ha sido eliminada. ¿Qué deseas hacer?",
-  rain: "Lluvia",
-  for: "para",
-  snow: "Nieve",
-};
-
-const config = {
-  TELEGRAM_BOT_TOKEN: "PUT_YOUR_TELEGRAM_BOT_TOKEN",
-  OPENWEATHER_TOKEN: "PUT_YOUR_OPENWEATHER_TOKEN",
-  SQLITE_DB_PATH: "/path/to/your/db/file/users",
-  REQUIRED_PARAMS: 4,
-  PREDICTION_NUMBER: 6,
-  ICONS: {
-    SUN: "\u2600",
-    CLOUD: "\u2601",
-    RAIN: "\u2614",
-    PART_CLOUDY: "\u26C5",
-    SNOW: "\u2744",
-    HOT_SPRINGS: "\u2668",
-    WARNING: "\u26A0",
-    RAY: "\u26A1",
-  },
-  KEYBOARD: {
-    HOURS: {
-      keyboard: [
-        ["0", "1", "2", "3", "4", "5"],
-        ["6", "7", "8", "9", "10", "11"],
-        ["12", "13", "14", "15", "16", "17"],
-        ["18", "19", "20", "21", "22", "23"],
-      ],
-      resize_keyboard: true,
-    },
-
-    MINUTES: {
-      keyboard: [
-        ["00", "10", "20"],
-        ["30", "40", "50"],
-      ],
-      resize_keyboard: true,
-    },
-
-    LOCATION: {
-      keyboard: [
-        [
-          {
-            text: str.sendLocation,
-            request_location: true,
-          },
-        ],
-      ],
-      resize_keyboard: true,
-    },
-  },
-  RETRY: 300000, // 5 minutes
-};
-
-/**
- *  Return icon weather depending on code returned by OpenWeatherMap.
- *
- *  @param  {Number} id : Id for type of weather.
- */
-
-const getIcon = function (id: number) {
-  if (id >= 200 && id < 300) {
-    return config.ICONS.RAY;
-  } else if (id >= 300 && id < 400) {
-    return config.ICONS.RAIN;
-  } else if (id >= 500 && id < 600) {
-    return config.ICONS.RAIN;
-  } else if (id >= 500 && id < 600) {
-    return config.ICONS.SNOW;
-  } else if (id >= 600 && id < 700) {
-    return config.ICONS.HOT_SPRINGS;
-  } else if (id === 800) {
-    return config.ICONS.SUN;
-  } else if (id >= 800 && id < 900) {
-    return config.ICONS.CLOUD;
-  } else {
-    return config.ICONS.WARNING;
-  }
-};
-
-// OpenWeatherMap API params
-const WEATHER_BASE = "http://api.openweathermap.org/data/2.5/forecast?";
-const TOKEN_WEATHER = config.OPENWEATHER_TOKEN;
 
 /**
  *  Return OpenWeatherMap url for weather petition.
@@ -167,14 +17,14 @@ const TOKEN_WEATHER = config.OPENWEATHER_TOKEN;
 
 const getUrl = function (params: { [key: string]: string | number }) {
   var getParams = {
-    appid: TOKEN_WEATHER,
+    appid: process.env.OPENWEATHER_TOKEN as string,
     units: "metric",
     lang: "sp",
     lat: params.lat,
     lon: params.lon,
   };
 
-  return WEATHER_BASE + utils.encodeQueryData(getParams);
+  return WEATHER_BASE + encodeQueryData(getParams);
 };
 
 const msg = {
@@ -228,7 +78,7 @@ const MAIN_KEYBOARD = [
         .then((response) => response.json())
         .then(async (data) => {
           let msg = "";
-          msg = `<b>${str.weatherPrediction} ${str.for} ${data.city.name}</b>\n\n`;
+          msg = `<b>${literals.weatherPrediction} ${literals.for} ${data.city.name}</b>\n\n`;
 
           let list = data.list;
           let count;
@@ -287,9 +137,7 @@ function sendWeather(weatherAlert: List) {
   let time = new Date(weatherAlert.dt * 1000);
   let timeFormated = formatTime(time);
   let weatherId = weatherAlert.weather[0].id;
-  let description = utils.capitalizeFirstLetter(
-    weatherAlert.weather[0].description
-  );
+  let description = capitalizeFirstLetter(weatherAlert.weather[0].description);
   let minTemperature = Math.round(weatherAlert.main.temp_min);
   let maxTemperature = Math.round(weatherAlert.main.temp_max);
   let msg = "";
@@ -299,23 +147,27 @@ function sendWeather(weatherAlert: List) {
 
   // Min and max temperature are different
   if (minTemperature !== maxTemperature) {
-    msg += `${str.temperature}: ${Math.round(weatherAlert.main.temp_min)}°C - `;
+    msg += `${literals.temperature}: ${Math.round(
+      weatherAlert.main.temp_min
+    )}°C - `;
     msg += `${Math.round(weatherAlert.main.temp_max)}°C\n`;
   }
 
   // No sense showing the same info
   else {
-    msg += `${str.temperature}: ${Math.round(weatherAlert.main.temp_max)}°C\n`;
+    msg += `${literals.temperature}: ${Math.round(
+      weatherAlert.main.temp_max
+    )}°C\n`;
   }
 
   // Rain
   if (weatherAlert.rain && weatherAlert.rain["3h"] != null) {
-    msg += `${str.rain}: ${weatherAlert.rain["3h"]}mm\n`;
+    msg += `${literals.rain}: ${weatherAlert.rain["3h"]}mm\n`;
   }
 
   // Snow
   if (weatherAlert.snow && weatherAlert.snow["3h"] != null) {
-    msg += `${str.snow}: ${weatherAlert.snow["3h"]}\n`;
+    msg += `${literals.snow}: ${weatherAlert.snow["3h"]}\n`;
   }
 
   msg += "\n";

@@ -10,8 +10,7 @@
     "strictNullChecks": true,
     "strictFunctionTypes": true,
     "strictPropertyInitialization": true,
-
     "esModuleInterop": true
   },
-  "include": ["index.ts"]
+  "include": ["./**/*.ts"]
 }
