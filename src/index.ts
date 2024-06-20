@@ -26,9 +26,6 @@ const MAIN_KEYBOARD = Markup.keyboard([
 (async () => {
   // const timeoutMs = calculateMsForTimeout(process.env.TIME_TO_LAUNCH as string);
   let userInfo = getUserInfo();
-  console.log("======================");
-  console.log(getUserInfo());
-  console.log("======================");
 
   try {
     const bot = new Telegraf(process.env.BOT_TOKEN as string);
@@ -48,9 +45,11 @@ const MAIN_KEYBOARD = Markup.keyboard([
       );
     });
 
-    bot.hears("Ver mi suscripción", (ctx) => {
-      ctx.reply("You selected Ver mi suscripción");
-      console.log("Chat ID:", ctx.chat.id);
+    bot.hears("Ver mi suscripción", async (ctx) => {
+      await ctx.reply(
+        `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`
+      );
+      await ctx.replyWithLocation(userInfo.lat, userInfo.lon);
     });
 
     bot.hears("Actualizar localización", (ctx) => {
@@ -59,7 +58,7 @@ const MAIN_KEYBOARD = Markup.keyboard([
 
     bot.hears("Actualizar hora", (ctx) => {
       ctx.reply(
-        `Te enviamos la predicción del tiempo todos los días a las ${userInfo.time}`,
+        `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`,
         Markup.inlineKeyboard([
           [Markup.button.callback("Update Time", "UPDATE_TIME")],
         ])
@@ -67,7 +66,21 @@ const MAIN_KEYBOARD = Markup.keyboard([
     });
 
     bot.action("UPDATE_TIME", (ctx, next) => {
-      return ctx.reply("👍").then(() => next());
+      return ctx
+        .reply(
+          "👍",
+          Markup.inlineKeyboard([
+            [
+              Markup.button.callback("1", "UPDATE_HOUR"),
+              Markup.button.callback("2", "UPDATE_HOUR"),
+            ],
+          ])
+        )
+        .then(() => next());
+    });
+
+    bot.action("UPDATE_HOUR", (ctx, next) => {
+      console.log(JSON.stringify(ctx));
     });
 
     bot.on(message("location"), async (ctx) => {
@@ -76,10 +89,7 @@ const MAIN_KEYBOARD = Markup.keyboard([
         `Location received! Latitude: ${latitude}, Longitude: ${longitude}`
       );
 
-      const { data, error } = await getForecast(
-        String(latitude),
-        String(longitude)
-      );
+      const { data, error } = await getForecast(latitude, longitude);
 
       if (error) {
         ctx.reply(

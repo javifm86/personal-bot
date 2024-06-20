@@ -4,8 +4,8 @@ import path from "path";
 const filePath = path.join(__dirname, "info.json");
 
 interface UserInfo {
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
   time: string;
 }
 

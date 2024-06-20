@@ -1,7 +1,7 @@
 import { WEATHER_BASE } from "./constants";
 import { encodeQueryData } from "./utils";
 
-function getUrl(lat: string, lon: string) {
+function getUrl(lat: number, lon: number) {
   var getParams = {
     appid: process.env.OPENWEATHER_TOKEN as string,
     units: "metric",
@@ -13,7 +13,7 @@ function getUrl(lat: string, lon: string) {
   return WEATHER_BASE + encodeQueryData(getParams);
 }
 
-async function getForecast(lat: string, lon: string) {
+async function getForecast(lat: number, lon: number) {
   const urlWithParams = getUrl(lat, lon);
   const response = await fetch(urlWithParams);
 
