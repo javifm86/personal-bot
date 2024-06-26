@@ -1,9 +1,8 @@
 import dotenv from "dotenv";
-import fs from "fs";
-
-import { Telegraf, Markup, Context, session } from "telegraf";
+import { Telegraf, Context, session } from "telegraf";
 import { message } from "telegraf/filters";
-import { formatForecast } from "./utils";
+
+import { formatForecast, logError } from "./utils";
 import { getUserInfo, updateUserInfo } from "./userInfo";
 import getForecast from "./getForecast";
 import {
@@ -122,11 +121,3 @@ dotenv.config();
     logError(e);
   }
 })();
-
-function logError(e: Error) {
-  console.log("======================");
-  console.log(e?.stack);
-  console.log("======================");
-  const errorFile = `./error-bot.txt`;
-  fs.appendFileSync(errorFile, "======== \n" + e?.stack);
-}

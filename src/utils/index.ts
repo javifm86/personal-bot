@@ -1,6 +1,6 @@
-import { PREDICTION_NUMBER } from "./constants";
-import literals from "./literals";
-import { List, OpenWeatherResponse } from "./types";
+import { PREDICTION_NUMBER } from "../constants";
+import literals from "../literals";
+import { List, OpenWeatherResponse } from "../types";
 
 const enum Icons {
   SUN = "\u2600",
@@ -13,11 +13,11 @@ const enum Icons {
   RAY = "\u26A1",
 }
 
-export function capitalizeFirstLetter(str: string) {
+function capitalizeFirstLetter(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
-export function encodeQueryData(data: { [key: string]: string | number }) {
+function encodeQueryData(data: { [key: string]: string | number }) {
   let ret: string[] = [];
 
   for (let d in data) {
@@ -26,7 +26,7 @@ export function encodeQueryData(data: { [key: string]: string | number }) {
   return ret.join("&");
 }
 
-export function getIcon(id: number) {
+function getIcon(id: number) {
   if (id >= 200 && id < 300) {
     return Icons.RAY;
   }
@@ -57,7 +57,7 @@ export function getIcon(id: number) {
   return Icons.WARNING;
 }
 
-export function formatForecast(data: OpenWeatherResponse) {
+function formatForecast(data: OpenWeatherResponse) {
   let msg = "";
   msg = `<b>${literals.weatherPrediction} ${literals.for} ${data.city.name}</b>\n\n`;
 
@@ -122,3 +122,10 @@ function formatTime(date: Date) {
   });
   return timeFormatter.format(date);
 }
+
+function logError(e: Error) {
+  console.error(e?.stack);
+  console.log("======================");
+}
+
+export { encodeQueryData, formatForecast, logError };
