@@ -4,7 +4,7 @@
   "description": "",
   "scripts": {
     "tsc": "tsc",
-    "copy:userInfo": "cd build && copyfiles info.json ../",
+    "copy:userInfo": "copyfiles -u 1 build/info.json ./",
     "predev": "npm run copy:userInfo && rimraf build && npm run tsc",
     "dev": "copyfiles .env build && copyfiles info.json build && cd build && node ./index.js"
   },
