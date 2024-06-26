@@ -31,17 +31,35 @@ dotenv.config();
       }
     });
 
-    bot.start(async (ctx) => {
+    bot.start((ctx) => {
       if (!ctx.session) ctx.session = {};
 
-      await ctx.reply(
+      ctx.reply(
         "¡Hola Javi! Bienvenido al bot encargado del servicio del tiempo. ¿Qué te gustaría hacer?",
         KEYBOARDS.MAIN.resize()
       );
     });
 
     bot.hears("Ver mi suscripción", async (ctx) => {
-      const userInfo = getUserInfo();
+      const userInfo = await getUserInfo();
+      const hasLocation = userInfo !== null && userInfo.lat && userInfo.lon;
+      const hasTime = userInfo !== null && userInfo.time;
+
+      if (userInfo === null || !hasLocation || !hasTime) {
+        let message =
+          "No tienes una suscripción activa. Para ello necesitamos:\n\n";
+
+        if (!hasLocation) {
+          message += "- Tu localización\n";
+        }
+
+        if (!hasTime) {
+          message +=
+            "- La hora a la que que deseas recibir la predicción del tiempo\n";
+        }
+        await ctx.reply(message, KEYBOARDS.INLINE_UPDATE);
+        return;
+      }
 
       await ctx.replyWithLocation(userInfo.lat, userInfo.lon);
       await ctx.reply(
@@ -52,7 +70,7 @@ dotenv.config();
 
     bot.action(/^data-(\d+)$/, async (ctx) => {
       const newTime = `${ctx.match[1]}:00`;
-      updateUserInfo({ time: newTime });
+      await updateUserInfo({ time: newTime });
       await ctx.answerCbQuery();
       await ctx.reply(`Hora actualizada a las ${newTime}`);
     });

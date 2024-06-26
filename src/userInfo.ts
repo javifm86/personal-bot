@@ -1,4 +1,4 @@
-import fs from "fs";
+import { promises as fs } from "fs";
 import path from "path";
 
 const filePath = path.join(__dirname, "info.json");
@@ -9,12 +9,23 @@ interface UserInfo {
   time: string;
 }
 
-export function getUserInfo(): UserInfo {
-  const dataFromFile = fs.readFileSync(filePath, "utf8");
-  return JSON.parse(dataFromFile);
+export async function getUserInfo(): Promise<UserInfo | null> {
+  try {
+    await fs.access(filePath);
+    const dataFromFile = await fs.readFile(filePath, "utf8");
+    return JSON.parse(dataFromFile);
+  } catch (error) {
+    return null;
+  }
 }
 
-export function updateUserInfo(userInfo: Partial<UserInfo>) {
-  const nextUserInfo = { ...getUserInfo(), ...userInfo };
-  fs.writeFileSync(filePath, JSON.stringify(nextUserInfo, null, 2), "utf8");
+export async function updateUserInfo(userInfo: Partial<UserInfo>) {
+  const currentUserInfo = await getUserInfo();
+  const nextUserInfo = { ...currentUserInfo, ...userInfo };
+
+  try {
+    await fs.writeFile(filePath, JSON.stringify(nextUserInfo, null, 2), "utf8");
+  } catch (error) {
+    console.error("Failed to update user info:", error);
+  }
 }

@@ -4,8 +4,9 @@
   "description": "",
   "scripts": {
     "tsc": "tsc",
-    "predev": "npm run tsc",
-    "dev": "cd build && node ./index.js"
+    "copy:userInfo": "cd build && copyfiles info.json ../",
+    "predev": "npm run copy:userInfo && rimraf build && npm run tsc",
+    "dev": "copyfiles .env build && copyfiles info.json build && cd build && node ./index.js"
   },
   "keywords": [],
   "author": "",
@@ -15,5 +16,9 @@
     "dotenv": "^16.4.1",
     "telegraf": "^4.16.3",
     "typescript": "^5.3.3"
+  },
+  "devDependencies": {
+    "copyfiles": "^2.4.1",
+    "rimraf": "^5.0.7"
   }
 }
