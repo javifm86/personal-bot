@@ -1,5 +1,4 @@
 import { PREDICTION_NUMBER } from "../constants";
-import literals from "../literals";
 import { List, OpenWeatherResponse } from "../types";
 
 const enum Icons {
@@ -59,7 +58,7 @@ function getIcon(id: number) {
 
 function formatForecast(data: OpenWeatherResponse) {
   let msg = "";
-  msg = `<b>${literals.weatherPrediction} ${literals.for} ${data.city.name}</b>\n\n`;
+  msg = `<b>Previsión del tiempo para ${data.city.name}</b>\n\n`;
 
   let list = data.list;
   let count = list.length < PREDICTION_NUMBER ? list.length : PREDICTION_NUMBER;
@@ -86,27 +85,23 @@ function sendWeather(weatherAlert: List) {
 
   // Min and max temperature are different
   if (minTemperature !== maxTemperature) {
-    msg += `${literals.temperature}: ${Math.round(
-      weatherAlert.main.temp_min
-    )}°C - `;
+    msg += `Temperatura: ${Math.round(weatherAlert.main.temp_min)}°C - `;
     msg += `${Math.round(weatherAlert.main.temp_max)}°C\n`;
   }
 
   // No sense showing the same info
   else {
-    msg += `${literals.temperature}: ${Math.round(
-      weatherAlert.main.temp_max
-    )}°C\n`;
+    msg += `Temperatura: ${Math.round(weatherAlert.main.temp_max)}°C\n`;
   }
 
   // Rain
   if (weatherAlert.rain && weatherAlert.rain["3h"] != null) {
-    msg += `${literals.rain}: ${weatherAlert.rain["3h"]}mm\n`;
+    msg += `Lluvia: ${weatherAlert.rain["3h"]}mm\n`;
   }
 
   // Snow
   if (weatherAlert.snow && weatherAlert.snow["3h"] != null) {
-    msg += `${literals.snow}: ${weatherAlert.snow["3h"]}\n`;
+    msg += `Nieve: ${weatherAlert.snow["3h"]}\n`;
   }
 
   msg += "\n";

@@ -5,7 +5,7 @@ import { message } from "telegraf/filters";
 import { getUserInfo, updateUserInfo } from "./userInfo";
 import { formatForecast, logError } from "./utils";
 import { ActionsUpdateKeyboard, KEYBOARDS } from "./utils/keyboards";
-import getForecast from "./getForecast";
+import getForecast from "./services/getForecast";
 
 interface MySession {
   locationRequestSource?: string;

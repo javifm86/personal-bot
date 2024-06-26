@@ -1,5 +1,5 @@
-import { WEATHER_BASE } from "./constants";
-import { encodeQueryData } from "./utils";
+import { WEATHER_BASE } from "../constants";
+import { encodeQueryData } from "../utils";
 
 function getUrl(lat: number, lon: number) {
   var getParams = {
