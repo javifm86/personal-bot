@@ -5,7 +5,7 @@ const enum ActionsUpdateKeyboard {
   LOCATION = "UPDATE_LOCATION",
 }
 
-const INLINE_UPDATE_KEYBOARD = Markup.inlineKeyboard([
+const INLINE_UPDATE = Markup.inlineKeyboard([
   [Markup.button.callback("Actualizar hora", ActionsUpdateKeyboard.TIME)],
   [
     Markup.button.callback(
@@ -15,18 +15,23 @@ const INLINE_UPDATE_KEYBOARD = Markup.inlineKeyboard([
   ],
 ]);
 
-const MAIN_KEYBOARD = Markup.keyboard([
+const MAIN = Markup.keyboard([
   ["Ver mi suscripción"],
   [Markup.button.locationRequest("Consultar tiempo actual")],
 ]);
 
-const INLINE_HOURS_DAY_KEYBOARD = Markup.inlineKeyboard(
-  createHoursDayButtons()
-);
+const INLINE_HOURS_DAY = Markup.inlineKeyboard(createHoursDayButtons());
 
-const SEND_LOCATION_KEYBOARD = Markup.keyboard([
+const SEND_LOCATION = Markup.keyboard([
   Markup.button.locationRequest("Enviar ubicación"),
 ]);
+
+const KEYBOARDS = {
+  MAIN,
+  INLINE_HOURS_DAY,
+  INLINE_UPDATE,
+  SEND_LOCATION,
+};
 
 function createTimeButtons(startHour: number, endHour: number): any[] {
   const buttons = [];
@@ -50,10 +55,4 @@ function createHoursDayButtons() {
   ];
 }
 
-export {
-  MAIN_KEYBOARD,
-  INLINE_HOURS_DAY_KEYBOARD,
-  INLINE_UPDATE_KEYBOARD,
-  SEND_LOCATION_KEYBOARD,
-  ActionsUpdateKeyboard,
-};
+export { KEYBOARDS, ActionsUpdateKeyboard };

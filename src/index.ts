@@ -2,16 +2,10 @@ import dotenv from "dotenv";
 import { Telegraf, Context, session } from "telegraf";
 import { message } from "telegraf/filters";
 
-import { formatForecast, logError } from "./utils";
 import { getUserInfo, updateUserInfo } from "./userInfo";
+import { formatForecast, logError } from "./utils";
+import { ActionsUpdateKeyboard, KEYBOARDS } from "./utils/keyboards";
 import getForecast from "./getForecast";
-import {
-  ActionsUpdateKeyboard,
-  INLINE_HOURS_DAY_KEYBOARD,
-  SEND_LOCATION_KEYBOARD,
-  INLINE_UPDATE_KEYBOARD,
-  MAIN_KEYBOARD,
-} from "./utils/keyboards";
 
 interface MySession {
   locationRequestSource?: string;
@@ -42,7 +36,7 @@ dotenv.config();
 
       await ctx.reply(
         "¡Hola Javi! Bienvenido al bot encargado del servicio del tiempo. ¿Qué te gustaría hacer?",
-        MAIN_KEYBOARD.resize()
+        KEYBOARDS.MAIN.resize()
       );
     });
 
@@ -52,7 +46,7 @@ dotenv.config();
       await ctx.replyWithLocation(userInfo.lat, userInfo.lon);
       await ctx.reply(
         `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`,
-        INLINE_UPDATE_KEYBOARD
+        KEYBOARDS.INLINE_UPDATE
       );
     });
 
@@ -68,14 +62,14 @@ dotenv.config();
       await ctx.answerCbQuery();
       await ctx.reply(
         "Por favor, envía tu ubicación actual",
-        SEND_LOCATION_KEYBOARD.resize()
+        KEYBOARDS.SEND_LOCATION.resize()
       );
       next();
     });
 
     bot.action(ActionsUpdateKeyboard.TIME, async (ctx, next) => {
       await ctx.answerCbQuery();
-      await ctx.reply("Selecciona la nueva hora", INLINE_HOURS_DAY_KEYBOARD);
+      await ctx.reply("Selecciona la nueva hora", KEYBOARDS.INLINE_HOURS_DAY);
       next();
     });
 
@@ -88,7 +82,7 @@ dotenv.config();
         ctx.session.locationRequestSource = undefined;
         await ctx.reply(
           "La localización se ha actualizado correctamente",
-          MAIN_KEYBOARD.resize()
+          KEYBOARDS.MAIN.resize()
         );
         return;
       }
