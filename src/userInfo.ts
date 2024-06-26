@@ -14,6 +14,7 @@ export function getUserInfo(): UserInfo {
   return JSON.parse(dataFromFile);
 }
 
-export function updateUserInfo(userInfo: UserInfo) {
-  fs.writeFileSync(filePath, JSON.stringify(userInfo, null, 2), "utf8");
+export function updateUserInfo(userInfo: Partial<UserInfo>) {
+  const nextUserInfo = { ...getUserInfo(), ...userInfo };
+  fs.writeFileSync(filePath, JSON.stringify(nextUserInfo, null, 2), "utf8");
 }

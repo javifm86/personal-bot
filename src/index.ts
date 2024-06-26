@@ -1,35 +1,33 @@
 import dotenv from "dotenv";
 import fs from "fs";
 
-import { Telegraf, Markup } from "telegraf";
+import { Telegraf, Markup, Context, session } from "telegraf";
 import { message } from "telegraf/filters";
-import { formatForecast } from "./utils";
-import { getUserInfo } from "./userInfo";
+import { createHoursDayButtons, formatForecast } from "./utils";
+import { getUserInfo, updateUserInfo } from "./userInfo";
 import getForecast from "./getForecast";
 
-dotenv.config();
+interface MySession {
+  locationRequestSource?: string;
+}
 
-// const MAIN_KEYBOARD = [
-//   [{ text: msg.ficharSalida7h15m, callback_data: "ficharSalida7h15m" }],
-//   [{ text: msg.ficharSalida7h30m, callback_data: "ficharSalida7h30m" }],
-//   [{ text: msg.ficharSalida, callback_data: "ficharSalida" }],
-//   [{ text: msg.check, callback_data: "check" }],
-// ];
+interface MyContext extends Context {
+  session: MySession;
+}
+
+dotenv.config();
 
 const MAIN_KEYBOARD = Markup.keyboard([
   ["Ver mi suscripción"],
   [Markup.button.locationRequest("Consultar tiempo actual")],
-  ["Actualizar localización"],
-  ["Actualizar hora"],
 ]);
 
 (async () => {
-  // const timeoutMs = calculateMsForTimeout(process.env.TIME_TO_LAUNCH as string);
-  let userInfo = getUserInfo();
-
   try {
-    const bot = new Telegraf(process.env.BOT_TOKEN as string);
+    const bot = new Telegraf<MyContext>(process.env.BOT_TOKEN as string);
     console.log("Bot iniciado");
+
+    bot.use(session());
 
     // Middleware to check chat ID
     bot.use((ctx, next) => {
@@ -39,6 +37,8 @@ const MAIN_KEYBOARD = Markup.keyboard([
     });
 
     bot.start((ctx) => {
+      if (!ctx.session) ctx.session = {};
+
       ctx.reply(
         "¡Hola Javi! Bienvenido al bot encargado del servicio del tiempo. ¿Qué te gustaría hacer?",
         MAIN_KEYBOARD
@@ -46,49 +46,66 @@ const MAIN_KEYBOARD = Markup.keyboard([
     });
 
     bot.hears("Ver mi suscripción", async (ctx) => {
-      await ctx.reply(
-        `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`
-      );
+      const userInfo = getUserInfo();
+
       await ctx.replyWithLocation(userInfo.lat, userInfo.lon);
-    });
-
-    bot.hears("Actualizar localización", (ctx) => {
-      ctx.reply("You selected Actualizar localización");
-    });
-
-    bot.hears("Actualizar hora", (ctx) => {
-      ctx.reply(
+      await ctx.reply(
         `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`,
         Markup.inlineKeyboard([
-          [Markup.button.callback("Update Time", "UPDATE_TIME")],
+          [Markup.button.callback("Actualizar hora", "UPDATE_TIME")],
+          [
+            Markup.button.callback(
+              "Actualizar localización",
+              "UPDATE_LOCATION"
+            ),
+          ],
         ])
       );
     });
 
-    bot.action("UPDATE_TIME", (ctx, next) => {
-      return ctx
-        .reply(
-          "👍",
-          Markup.inlineKeyboard([
-            [
-              Markup.button.callback("1", "UPDATE_HOUR"),
-              Markup.button.callback("2", "UPDATE_HOUR"),
-            ],
-          ])
-        )
-        .then(() => next());
+    bot.action(/^data-(\d+)$/, async (ctx) => {
+      const newTime = `${ctx.match[1]}:00`;
+      updateUserInfo({ time: newTime });
+      await ctx.answerCbQuery();
+      await ctx.reply(`Hora actualizada a las ${newTime}`);
     });
 
-    bot.action("UPDATE_HOUR", (ctx, next) => {
-      console.log(JSON.stringify(ctx));
+    bot.action("UPDATE_LOCATION", async (ctx, next) => {
+      ctx.session.locationRequestSource = "update";
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        "Por favor, envía tu ubicación actual",
+        Markup.keyboard([Markup.button.locationRequest("Enviar ubicación")])
+          .oneTime()
+          .resize()
+      );
+      next();
+    });
+
+    bot.action("UPDATE_TIME", async (ctx, next) => {
+      await ctx.answerCbQuery();
+      await ctx.reply(
+        "Selecciona la nueva hora",
+        Markup.inlineKeyboard(createHoursDayButtons())
+      );
+      next();
     });
 
     bot.on(message("location"), async (ctx) => {
       const { latitude, longitude } = ctx.message.location;
-      ctx.reply(
-        `Location received! Latitude: ${latitude}, Longitude: ${longitude}`
-      );
 
+      // Update location
+      if (ctx.session.locationRequestSource === "update") {
+        updateUserInfo({ lat: latitude, lon: longitude });
+        ctx.session.locationRequestSource = undefined;
+        await ctx.reply(
+          "La localización se ha actualizado correctamente",
+          MAIN_KEYBOARD
+        );
+        return;
+      }
+
+      // Get forecast
       const { data, error } = await getForecast(latitude, longitude);
 
       if (error) {
