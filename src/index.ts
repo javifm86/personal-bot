@@ -3,9 +3,16 @@ import fs from "fs";
 
 import { Telegraf, Markup, Context, session } from "telegraf";
 import { message } from "telegraf/filters";
-import { createHoursDayButtons, formatForecast } from "./utils";
+import { formatForecast } from "./utils";
 import { getUserInfo, updateUserInfo } from "./userInfo";
 import getForecast from "./getForecast";
+import {
+  ActionsUpdateKeyboard,
+  INLINE_HOURS_DAY_KEYBOARD,
+  SEND_LOCATION_KEYBOARD,
+  INLINE_UPDATE_KEYBOARD,
+  MAIN_KEYBOARD,
+} from "./utils/keyboards";
 
 interface MySession {
   locationRequestSource?: string;
@@ -16,11 +23,6 @@ interface MyContext extends Context {
 }
 
 dotenv.config();
-
-const MAIN_KEYBOARD = Markup.keyboard([
-  ["Ver mi suscripción"],
-  [Markup.button.locationRequest("Consultar tiempo actual")],
-]);
 
 (async () => {
   try {
@@ -36,12 +38,12 @@ const MAIN_KEYBOARD = Markup.keyboard([
       }
     });
 
-    bot.start((ctx) => {
+    bot.start(async (ctx) => {
       if (!ctx.session) ctx.session = {};
 
-      ctx.reply(
+      await ctx.reply(
         "¡Hola Javi! Bienvenido al bot encargado del servicio del tiempo. ¿Qué te gustaría hacer?",
-        MAIN_KEYBOARD
+        MAIN_KEYBOARD.resize()
       );
     });
 
@@ -51,15 +53,7 @@ const MAIN_KEYBOARD = Markup.keyboard([
       await ctx.replyWithLocation(userInfo.lat, userInfo.lon);
       await ctx.reply(
         `Te enviamos la información del tiempo todos los días a las ${userInfo.time}`,
-        Markup.inlineKeyboard([
-          [Markup.button.callback("Actualizar hora", "UPDATE_TIME")],
-          [
-            Markup.button.callback(
-              "Actualizar localización",
-              "UPDATE_LOCATION"
-            ),
-          ],
-        ])
+        INLINE_UPDATE_KEYBOARD
       );
     });
 
@@ -70,24 +64,19 @@ const MAIN_KEYBOARD = Markup.keyboard([
       await ctx.reply(`Hora actualizada a las ${newTime}`);
     });
 
-    bot.action("UPDATE_LOCATION", async (ctx, next) => {
+    bot.action(ActionsUpdateKeyboard.LOCATION, async (ctx, next) => {
       ctx.session.locationRequestSource = "update";
       await ctx.answerCbQuery();
       await ctx.reply(
         "Por favor, envía tu ubicación actual",
-        Markup.keyboard([Markup.button.locationRequest("Enviar ubicación")])
-          .oneTime()
-          .resize()
+        SEND_LOCATION_KEYBOARD.resize()
       );
       next();
     });
 
-    bot.action("UPDATE_TIME", async (ctx, next) => {
+    bot.action(ActionsUpdateKeyboard.TIME, async (ctx, next) => {
       await ctx.answerCbQuery();
-      await ctx.reply(
-        "Selecciona la nueva hora",
-        Markup.inlineKeyboard(createHoursDayButtons())
-      );
+      await ctx.reply("Selecciona la nueva hora", INLINE_HOURS_DAY_KEYBOARD);
       next();
     });
 
@@ -100,7 +89,7 @@ const MAIN_KEYBOARD = Markup.keyboard([
         ctx.session.locationRequestSource = undefined;
         await ctx.reply(
           "La localización se ha actualizado correctamente",
-          MAIN_KEYBOARD
+          MAIN_KEYBOARD.resize()
         );
         return;
       }

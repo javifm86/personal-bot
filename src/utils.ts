@@ -1,4 +1,3 @@
-import { Markup } from "telegraf";
 import { PREDICTION_NUMBER } from "./constants";
 import literals from "./literals";
 import { List, OpenWeatherResponse } from "./types";
@@ -122,26 +121,4 @@ function formatTime(date: Date) {
     hour12: false,
   });
   return timeFormatter.format(date);
-}
-
-function createTimeButtons(startHour: number, endHour: number): any[] {
-  const buttons = [];
-  for (let hour = startHour; hour <= endHour; hour++) {
-    // Format the hour to a two-digit string
-    const hourString = hour.toString().padStart(2, "0");
-    // Create a button with the formatted time and corresponding data
-    buttons.push(
-      Markup.button.callback(`${hourString}:00`, `data-${hourString}`)
-    );
-  }
-  return buttons;
-}
-
-export function createHoursDayButtons() {
-  return [
-    createTimeButtons(0, 5),
-    createTimeButtons(6, 11),
-    createTimeButtons(12, 17),
-    createTimeButtons(18, 23),
-  ];
 }
